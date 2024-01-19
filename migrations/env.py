@@ -3,9 +3,9 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from src.menu.models import *
-from src.settings.base import Base
-from src.settings.config import settings
+from src.core.models import *
+from src.core.base import Base
+from src.core.config import settings
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.db_url)

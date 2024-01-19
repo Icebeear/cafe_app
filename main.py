@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.menu.router import router as menu_router
-from src.settings.config import settings
+from src.submenu.router import router as submenu_router
+from src.dish.router import router as dish_router 
+
+from src.core.config import settings
 
 
 app = FastAPI(
@@ -24,3 +27,5 @@ app = FastAPI(
 api_prefix = settings.api_v1_prefix
 
 app.include_router(router=menu_router, prefix=api_prefix)
+app.include_router(router=submenu_router, prefix=api_prefix)
+app.include_router(router=dish_router, prefix=api_prefix)
