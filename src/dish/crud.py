@@ -1,14 +1,20 @@
-
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.models import Dish, SubMenu, Menu
-
+from src.core.models import Dish, SubMenu
 from src.dish.schemas import DishCreate, DishRead, DishUpdatePartial
 
 
-async def create_dish(session: AsyncSession, dish: DishCreate, submenu: SubMenu) -> DishRead:
-    query = insert(Dish).values(**dish.model_dump(), submenu_id=submenu.id).returning(Dish)
+async def create_dish(
+        session: AsyncSession, 
+        dish: DishCreate, 
+        submenu: SubMenu
+) -> DishRead:
+    query = (
+        insert(Dish)
+        .values(**dish.model_dump(), submenu_id=submenu.id)
+        .returning(Dish)
+    )
     result = await session.execute(query)
     await session.commit()
     return result.scalars().first()
@@ -26,35 +32,33 @@ async def get_dish_by_id(session: AsyncSession, dish_id: int) -> Dish:
     return result.scalars().first()
 
 
-async def get_dishes(session: AsyncSession, offset: int = 0, limit: int = 100) -> list[DishRead]:
+async def get_dishes(
+    session: AsyncSession, 
+    offset: int = 0, 
+    limit: int = 100
+) -> list[Dish]:
     query = select(Dish).offset(offset).limit(limit)
     result = await session.execute(query)
     return result.scalars().all()
 
 
 async def update_dish_partial(
-        session: AsyncSession, 
-        dish: Dish,
-        dish_update: DishUpdatePartial | None = None,
+    session: AsyncSession,
+    dish: Dish,
+    dish_update: DishUpdatePartial | None = None,
 ) -> Dish:
-
     for name, value in dish_update.model_dump(exclude_unset=True).items():
         setattr(dish, name, value)
     await session.commit()
 
-    return dish 
-    
-    
+    return dish
+
+
 async def delete_dish(
-        session: AsyncSession,
-        dish: Dish,
+    session: AsyncSession,
+    dish: Dish,
 ) -> dict:
     await session.delete(dish)
     await session.commit()
 
-    return {
-        "status": True,
-        "message": "The dish has been deleted"
-    }
-
-
+    return {"status": True, "message": "The dish has been deleted"}

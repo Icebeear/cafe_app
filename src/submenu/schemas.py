@@ -1,23 +1,23 @@
 from typing import Annotated
+from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
-from uuid import uuid4, UUID
+from pydantic import BaseModel, Field
 
-'''SubMenu schemas'''
+
 class SubMenuBase(BaseModel):
-    title: str 
-    description: Annotated[str | None, Field(default=None, max_length=512)] 
+    title: str
+    description: Annotated[str | None, Field(default=None, max_length=512)]
 
 
 class SubMenuCreate(SubMenuBase):
-    pass 
+    pass
 
 
 class SubMenuRead(SubMenuBase):
-    id: UUID   
+    id: UUID
     dishes_count: int | None = 0
 
 
 class SubMenuUpdatePartial(SubMenuCreate):
-    title: str | None = None 
-    description: Annotated[str | None, Field(default=None, max_length=512)] 
+    title: str | None = None
+    description: Annotated[str | None, Field(default=None, max_length=512)]

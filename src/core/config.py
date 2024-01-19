@@ -33,9 +33,7 @@ headers = [
 
 class AppSettings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
-    db_url: str = (
-        f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?async_fallback=True"
-    )
+    db_url: str = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?async_fallback=True"
 
     cors_allow_origins: list[str] = Field(default=origins, exclude=True)
     cors_allow_credentials: bool = Field(default=True, exclude=True)

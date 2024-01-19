@@ -1,13 +1,13 @@
 from typing import Annotated
-
-from pydantic import BaseModel, Field, validator, ConfigDict
 from uuid import UUID
+
+from pydantic import BaseModel, Field, validator
 
 
 class DishBase(BaseModel):
-    title: str 
-    description: Annotated[str | None, Field(default=None, max_length=512)]  
-    price: Annotated[str | None, Field(default=0)]  
+    title: str
+    description: Annotated[str | None, Field(default=None, max_length=256)]
+    price: Annotated[str | None, Field(default=0)]
 
     @validator("price")
     def check_price_format(cls, value):
@@ -15,17 +15,14 @@ class DishBase(BaseModel):
 
 
 class DishCreate(DishBase):
-    pass 
+    pass
 
 
 class DishRead(DishBase):
-    id: UUID 
+    id: UUID
 
-    
+
 class DishUpdatePartial(DishCreate):
-    title: str | None = None 
-    description: Annotated[str | None, Field(default=None, max_length=1024)]
-    price: Annotated[str | None, Field(default=0)]  
-
-
-
+    title: str | None = None
+    description: Annotated[str | None, Field(default=None, max_length=256)]
+    price: Annotated[str | None, Field(default=0)]
