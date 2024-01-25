@@ -13,7 +13,9 @@ async def create_menu(session: AsyncSession, menu: MenuCreate) -> MenuRead:
 
 
 async def get_menus(
-    session: AsyncSession, offset: int = 0, limit: int = 100
+    session: AsyncSession, 
+    offset: int = 0, 
+    limit: int = 100
 ) -> list[MenuRead]:
     query = select(Menu).offset(offset).limit(limit)
     result = await session.execute(query)
