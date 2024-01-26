@@ -1,65 +1,75 @@
 from httpx import AsyncClient
-import pytest 
+import pytest
 
 
-'''Проверка crud для submenu'''
-@pytest.mark.asyncio
-@pytest.mark.order(2)
-async def test_submenus(ac: AsyncClient):
-    menu = await ac.post(
-        "/api/v1/menus/",
-        json={
-            "title": "menu 1",
-            "description": "menu 1 description",
-        },
-    )
-    assert menu.status_code == 201
-
-    menu_id = menu.json()["id"]
-
-    submenu = await ac.post(
-        f"/api/v1/menus/{menu_id}/submenus/",
-        json={
-            "title": "submenu 1",
-            "description": "description for submenu",
-        }
-    )
-    assert submenu.status_code == 201 
-
-    submenus = await ac.get(
-        f"/api/v1/menus/{menu_id}/submenus/",
-    )
-
-    assert len(submenus.json()) == 1 
-
-    response = await ac.get(
-        f"/api/v1/menus/{menu_id}/submenus/{submenu.json()['id']}",
-    )
-
-    assert response.status_code == 200 
-
-    assert response.json()["title"] == "submenu 1"
-    
-    response = await ac.patch(
-        f"/api/v1/menus/{menu_id}/submenus/{submenu.json()['id']}",
-        json={
-            "title": "new title for submenu 1",
-            "description": "new description for submenu 1",
-        }
-    )
-
-    assert response.status_code == 200 
-
-    response = await ac.delete(
-        f"/api/v1/menus/{menu_id}/submenus/{submenu.json()['id']}",
-    )
-
-    assert response.status_code == 200 
+"""Проверка crud для submenu"""
 
 
-    response = await ac.get(
-        f"/api/v1/menus/{menu_id}/{submenu.json()['id']}"
-    )
+@pytest.mark.order(3)
+class TestSubMenuAPI:
+    @pytest.fixture
+    async def submenu_fixture(self, ac: AsyncClient, request):
+        menu_title = f"menu_for_submenu_{request.node.name}"
+        submenu_title = f"submenu_for_test_{request.node.name}"
 
-    assert response.status_code == 404
-    
+        menu = await ac.post(
+            "/api/v1/menus/",
+            json={
+                "title": menu_title,
+                "description": "menu for submenu description",
+            },
+        )
+
+        assert menu.status_code == 201
+        menu_id = menu.json()["id"]
+
+        submenu = await ac.post(
+            f"/api/v1/menus/{menu_id}/submenus/",
+            json={
+                "title": submenu_title,
+                "description": "description for submenu 1",
+            },
+        )
+        assert submenu.status_code == 201
+        submenu_id = submenu.json()["id"]
+
+        return menu_id, submenu_id
+
+    @pytest.mark.asyncio
+    async def test_submenu_create(self, ac: AsyncClient, submenu_fixture):
+        respsonse = await ac.post(
+            f"/api/v1/menus/{submenu_fixture[0]}/submenus/",
+            json={
+                "title": "submenu 2",
+                "description": "description for submenu 2",
+            },
+        )
+        assert respsonse.status_code == 201
+
+    @pytest.mark.asyncio
+    async def test_submenu_patch(self, ac: AsyncClient, submenu_fixture):
+        response = await ac.patch(
+            f"/api/v1/menus/{submenu_fixture[0]}/submenus/{submenu_fixture[1]}",
+            json={
+                "title": "new title for submenu 1",
+                "description": "new description for submenu 1",
+            },
+        )
+
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_submenu_delete(self, ac: AsyncClient, submenu_fixture):
+        response = await ac.delete(
+            f"/api/v1/menus/{submenu_fixture[0]}/submenus/{submenu_fixture[1]}",
+        )
+
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_submenu_get_all(self, ac: AsyncClient, submenu_fixture):
+        submenus = await ac.get(
+            f"/api/v1/menus/{submenu_fixture[0]}/submenus/",
+        )
+
+        assert len(submenus.json()) == 1

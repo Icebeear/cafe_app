@@ -8,8 +8,6 @@ from src.core.database import get_async_session
 from src.core.models import Dish, Menu, SubMenu
 from src.menu.crud import get_menu_by_id
 
-from sqlalchemy.orm import joinedload
-
 
 async def menu_by_id(
     menu_id: Annotated[str, Path],
@@ -20,7 +18,19 @@ async def menu_by_id(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"menu not found"
         )
+    
+    submenus_dishes = await get_submenus_dishes(session, menu.id)
 
+    menu.submenus_count = submenus_dishes.total_submenus
+    menu.dishes_count = submenus_dishes.total_dishes
+
+    return menu
+
+
+async def get_submenus_dishes(
+    session: AsyncSession,
+    menu_id: Annotated[str, Path],   
+):
     query = (
         select(
             func.count(func.distinct(SubMenu.id)).label('total_submenus'),
@@ -35,27 +45,7 @@ async def menu_by_id(
 
     result = await session.execute(query)
 
-    result = result.fetchall()[0]
+    row = result.fetchone()
 
-    menu.submenus_count = result[0] 
-    menu.dishes_count = result[1] 
-
-    return menu
-
-
-async def count_submenus(
-    session: AsyncSession,
-    menu_id: str,
-) -> int:
-    query = select(SubMenu).where(SubMenu.menu_id == menu_id)
-    result = await session.execute(query)
-    return len(result.scalars().all())
-
-
-async def count_dishes(
-    session: AsyncSession,
-    menu_id: str,
-) -> int:
-    query = select(Dish).join(SubMenu).where(SubMenu.menu_id == menu_id)
-    result = await session.execute(query)
-    return len(result.scalars().all())
+    return row 
+    

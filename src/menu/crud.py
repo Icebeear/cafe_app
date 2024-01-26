@@ -21,11 +21,12 @@ async def get_menus(
     result = await session.execute(query)
     menus = result.scalars().all()
 
-    from src.menu.utils import count_dishes, count_submenus
+    from src.menu.utils import get_submenus_dishes
 
     for menu in menus:
-        menu.submenus_count = await count_submenus(session, menu.id)
-        menu.dishes_count = await count_dishes(session, menu.id)
+        submenus_dishes = await get_submenus_dishes(session, menu.id)
+        menu.submenus_count = submenus_dishes.total_submenus
+        menu.dishes_count = submenus_dishes.total_dishes
 
     return menus
 

@@ -2,7 +2,7 @@ from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.models import Menu, SubMenu
-from src.submenu.schemas import SubMenuCreate, SubMenuRead, SubMenuUpdatePartial
+from src.submenu.schemas import SubMenuCreate, SubMenuUpdatePartial
 
 
 async def get_submenu_by_id(

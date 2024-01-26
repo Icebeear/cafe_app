@@ -1,63 +1,78 @@
 from httpx import AsyncClient
-import pytest 
+import pytest
 
-'''
+"""
 Проверка кол-ва блюд и подменю в меню
-'''
-@pytest.mark.asyncio
-@pytest.mark.order(4)
-async def test_submenus_count_and_dishes_count(ac: AsyncClient):
-    ''' create menu '''
-    menu = await ac.post(
-        "/api/v1/menus/",
-        json={
-            "title": "menu 1",
-            "description": "cool menu",
-        },
-    )
-    assert menu.status_code == 201
+"""
 
-    ''' create submenu '''
-    submenu = await ac.post(
-        f"/api/v1/menus/{menu.json()['id']}/submenus/",
-        json={
-            "title": "submenu for test",
-            "description": "awesome submenu",
-        }
-    )
-    assert submenu.status_code == 201 
 
-    ''' add 2 dishes '''
-    dish1 = await ac.post(
-        f"api/v1/menus/{menu.json()['id']}/submenus/{submenu.json()['id']}/dishes/",
-        json={
-            "title": "apple pie",
-            "description": "so tasty",
-            "price": "10.0",
-        }
-    )
+@pytest.mark.order(1)
+class TestSubMenuDishAPI:
+    @pytest.mark.asyncio
+    async def test_mainmenu_create(self, ac: AsyncClient):
+        global menu_id
+        response = await ac.post(
+            "/api/v1/menus/",
+            json={
+                "title": "main menu",
+                "description": "main menu description",
+            },
+        )
+        assert response.status_code == 201
 
-    dish2 = await ac.post(
-        f"api/v1/menus/{menu.json()['id']}/submenus/{submenu.json()['id']}/dishes/",
-        json={
-            "title": "coca cola",
-            "description": "from usa",
-            "price": "5.0",
-        }
-    )
+        menu_id = response.json()["id"]
 
-    assert dish1.status_code == 201
-    assert dish2.status_code == 201
+    @pytest.mark.asyncio
+    async def test_submenu_create(self, ac: AsyncClient):
+        global submenu_id
+        submenu = await ac.post(
+            f"/api/v1/menus/{menu_id}/submenus/",
+            json={
+                "title": "submenu for testing",
+                "description": "awesome submenu",
+            },
+        )
+        assert submenu.status_code == 201
+        submenu_id = submenu.json()["id"]
 
-    ''' check response '''
-    response = await ac.get(
-        f"/api/v1/menus/{menu.json()['id']}"
-    )
+    """ add 2 dishes """
 
-    all_data = response.json()
-    assert response.status_code == 200
-    assert all_data["id"] == menu.json()["id"]
-    assert all_data["title"] == "menu 1"
-    assert all_data["description"] == "cool menu"
-    assert all_data["submenus_count"] == 1
-    assert all_data["dishes_count"] == 2
+    @pytest.mark.asyncio
+    async def test_dish_create_1(self, ac: AsyncClient):
+        response = await ac.post(
+            f"api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/",
+            json={
+                "title": "apple pie",
+                "description": "so tasty",
+                "price": "10.0",
+            },
+        )
+
+        assert response.status_code == 201
+
+    @pytest.mark.asyncio
+    async def test_dish_create_2(self, ac: AsyncClient):
+        response = await ac.post(
+            f"api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/",
+            json={
+                "title": "coca cola",
+                "description": "from usa",
+                "price": "5.0",
+            },
+        )
+
+        assert response.status_code == 201
+
+    """ check response """
+
+    @pytest.mark.asyncio
+    async def test_final_response(self, ac: AsyncClient):
+        response = await ac.get(f"/api/v1/menus/{menu_id}")
+
+        all_data = response.json()
+        assert response.status_code == 200
+        assert all_data["id"] == menu_id
+        assert all_data["title"] == "main menu"
+        assert all_data["description"] == "main menu description"
+        assert all_data["submenus_count"] == 1
+        assert all_data["dishes_count"] == 2
