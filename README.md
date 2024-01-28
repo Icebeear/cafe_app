@@ -10,6 +10,8 @@ Cafe app - это простой HTTP сервис для ресторана / �
 - Alembic 
 - Asyncpg 
 - Uvicorn 
+- PostgreSQL
+- Docker
 
 ## Running Local
 #### 1) Клонировать репозиторий 
@@ -24,18 +26,6 @@ Cafe app - это простой HTTP сервис для ресторана / �
     DB_NAME=
     DB_USER=
     DB_PASS=
-
-    DB_HOST=db
-    DB_PORT=5432
-    DB_NAME=postgres
-    DB_USER=postgres
-    DB_PASS=postgres
-
-    DB_HOST_TEST=test-db
-    DB_PORT_TEST=8080
-    DB_NAME_TEST=postgres-test
-    DB_USER_TEST=postgres-test
-    DB_PASS_TEST=postgres-test
 
 
 #### 3) Создать виртуальное окружение и установить зависимости
