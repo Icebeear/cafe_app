@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  cafe_app:
-    container_name: cafe_app
+  app:
+    container_name: app
     build:
       context: .
       dockerfile: Dockerfile
@@ -18,32 +18,33 @@ services:
 
 
   db:
-    container_name: main-db
     image: postgres:15.1-alpine
+    container_name: main-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
     ports:
-      - 5432:5432
-    env_file:
-      - .env.dev
+      - ${DB_PORT}:5432
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -p 5432" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -p ${DB_PORT}" ]
       interval: 2s
       timeout: 2s
       retries: 3
-    restart: always
-
+    
 
   test-db:
     image: postgres:15.1-alpine
     container_name: test-db
-    command: postgres -p 8080
     environment:
-      POSTGRES_DB: postgres-test
-      POSTGRES_USER: postgres-test
-      POSTGRES_PASSWORD: postgres-test
+      POSTGRES_DB: ${DB_NAME_TEST}
+      POSTGRES_USER: ${DB_USER_TEST}
+      POSTGRES_PASSWORD: ${DB_PASS_TEST}
     ports:
-      - 8080:5432
+      - ${DB_PORT_TEST}:5432
+    command: postgres -p ${DB_PORT_TEST}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -p 8080" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER_TEST} -p ${DB_PORT_TEST}" ]
       interval: 2s
       timeout: 2s
       retries: 3
@@ -53,7 +54,6 @@ services:
     container_name: tests
     build:
       context: .
-      dockerfile: Dockerfile
     command: sh -c "pytest -v tests/"
     ports:
      - 6000:6000

@@ -25,6 +25,18 @@ Cafe app - это простой HTTP сервис для ресторана / �
     DB_USER=
     DB_PASS=
 
+    DB_HOST=db
+    DB_PORT=5432
+    DB_NAME=postgres
+    DB_USER=postgres
+    DB_PASS=postgres
+
+    DB_HOST_TEST=test-db
+    DB_PORT_TEST=8080
+    DB_NAME_TEST=postgres-test
+    DB_USER_TEST=postgres-test
+    DB_PASS_TEST=postgres-test
+
 
 #### 3) Создать виртуальное окружение и установить зависимости
 
@@ -48,7 +60,7 @@ Cafe app - это простой HTTP сервис для ресторана / �
 
 
 ## Running Dev
-    docker-compose up -d
+    docker-compose --env-file .env.dev up -d
 
 #### Новый ORM запрос для получения количества подменю и блюд находится по пути 
     src/menu/utils.py 
