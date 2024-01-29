@@ -64,4 +64,4 @@ class TestMenuAPI:
         response = await ac.get("api/v1/menus/")
 
         assert response.status_code == 200
-        assert len(response.json()) == 3
+        assert len(response.json()) == 2

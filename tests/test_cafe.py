@@ -8,6 +8,8 @@ import pytest
 
 @pytest.mark.order(1)
 class TestSubMenuDishAPI:
+    """create menu"""
+
     @pytest.mark.asyncio
     async def test_mainmenu_create(self, ac: AsyncClient):
         global menu_id
@@ -22,20 +24,22 @@ class TestSubMenuDishAPI:
 
         menu_id = response.json()["id"]
 
+    """ create submenu """
+
     @pytest.mark.asyncio
-    async def test_submenu_create(self, ac: AsyncClient):
+    async def test_mainsubmenu_create(self, ac: AsyncClient):
         global submenu_id
-        submenu = await ac.post(
+        response = await ac.post(
             f"/api/v1/menus/{menu_id}/submenus/",
             json={
                 "title": "submenu for testing",
                 "description": "awesome submenu",
             },
         )
-        assert submenu.status_code == 201
-        submenu_id = submenu.json()["id"]
+        assert response.status_code == 201
+        submenu_id = response.json()["id"]
 
-    """ add 2 dishes """
+    """ create 1 dish """
 
     @pytest.mark.asyncio
     async def test_dish_create_1(self, ac: AsyncClient):
@@ -50,6 +54,8 @@ class TestSubMenuDishAPI:
 
         assert response.status_code == 201
 
+    """ create 2 dish """
+
     @pytest.mark.asyncio
     async def test_dish_create_2(self, ac: AsyncClient):
         response = await ac.post(
@@ -63,10 +69,10 @@ class TestSubMenuDishAPI:
 
         assert response.status_code == 201
 
-    """ check response """
+    """ check target menu """
 
     @pytest.mark.asyncio
-    async def test_final_response(self, ac: AsyncClient):
+    async def test_mainmenu_get(self, ac: AsyncClient):
         response = await ac.get(f"/api/v1/menus/{menu_id}")
 
         all_data = response.json()
@@ -76,3 +82,81 @@ class TestSubMenuDishAPI:
         assert all_data["description"] == "main menu description"
         assert all_data["submenus_count"] == 1
         assert all_data["dishes_count"] == 2
+
+    """ check target submenu """
+
+    @pytest.mark.asyncio
+    async def test_mainsubmenu_get(self, ac: AsyncClient):
+        response = await ac.get(f"/api/v1/menus/{menu_id}/submenus/{submenu_id}")
+
+        all_data = response.json()
+        assert response.status_code == 200
+        assert all_data["id"] == submenu_id
+        assert all_data["title"] == "submenu for testing"
+        assert all_data["description"] == "awesome submenu"
+        assert all_data["dishes_count"] == 2
+
+    """ delete submenu """
+
+    @pytest.mark.asyncio
+    async def test_mainsubmenu_delete(self, ac: AsyncClient):
+        response = await ac.delete(
+            f"/api/v1/menus/{menu_id}/submenus/{submenu_id}",
+        )
+
+        assert response.status_code == 200
+
+    """ check all submenus """
+
+    @pytest.mark.asyncio
+    async def test_mainsubmenu_get_all(self, ac: AsyncClient):
+        response = await ac.get(
+            f"/api/v1/menus/{menu_id}/submenus/",
+        )
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    """ check all dishes """
+
+    @pytest.mark.asyncio
+    async def test_dishes_get_all(self, ac: AsyncClient):
+        response = await ac.get(
+            f"/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/",
+        )
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    """ check target menu """
+
+    @pytest.mark.asyncio
+    async def test_mainmenu_get_2(self, ac: AsyncClient):
+        response = await ac.get(f"/api/v1/menus/{menu_id}")
+
+        all_data = response.json()
+        assert response.status_code == 200
+        assert all_data["id"] == menu_id
+        assert all_data["title"] == "main menu"
+        assert all_data["description"] == "main menu description"
+        assert all_data["submenus_count"] == 0
+        assert all_data["dishes_count"] == 0
+
+    """ delete menu """
+
+    @pytest.mark.asyncio
+    async def test_mainmenu_delete(self, ac: AsyncClient):
+        response = await ac.delete(
+            f"/api/v1/menus/{menu_id}",
+        )
+
+        assert response.status_code == 200
+
+    """ check all menus """
+
+    @pytest.mark.asyncio
+    async def test_mainmenu_get_all(self, ac: AsyncClient):
+        response = await ac.get("api/v1/menus/")
+
+        assert response.status_code == 200
+        assert response.json() == []

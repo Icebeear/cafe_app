@@ -86,4 +86,4 @@ class TestDishAPI:
             f"/api/v1/menus/{dish_fixture[0]}/submenus/{dish_fixture[1]}/dishes/",
         )
 
-        assert len(dishes.json()) == 6
+        assert len(dishes.json()) == 4
