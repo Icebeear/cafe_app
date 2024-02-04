@@ -1,3 +1,8 @@
 .env
 venv
 **/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+docker-compose-redis.yml
+docker-compose-test-db.yml
+python_style.md

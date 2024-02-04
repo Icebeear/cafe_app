@@ -15,6 +15,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
 
   db:
@@ -31,7 +33,7 @@ services:
       interval: 2s
       timeout: 2s
       retries: 3
-    
+
 
   test-db:
     image: postgres:15.1-alpine
@@ -62,3 +64,20 @@ services:
     depends_on:
       test-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+
+  redis:
+    container_name: redis
+    image: redis:7.2-rc1-alpine
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    expose:
+      - 6379
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5

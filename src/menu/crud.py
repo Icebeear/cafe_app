@@ -13,8 +13,8 @@ async def create_menu(session: AsyncSession, menu: MenuCreate) -> MenuRead:
 
 
 async def get_menus(
-    session: AsyncSession, 
-    offset: int = 0, 
+    session: AsyncSession,
+    offset: int = 0,
     limit: int = 100
 ) -> list[MenuRead]:
     query = select(Menu).offset(offset).limit(limit)
@@ -31,7 +31,7 @@ async def get_menus(
     return menus
 
 
-async def get_menu_by_id(session: AsyncSession, menu_id) -> Menu | None:
+async def get_menu_by_id(session: AsyncSession, menu_id: str) -> Menu | None:
     query = select(Menu).where(Menu.id == menu_id)
     result = await session.execute(query)
     return result.scalars().first()
@@ -40,7 +40,7 @@ async def get_menu_by_id(session: AsyncSession, menu_id) -> Menu | None:
 async def update_menu_partial(
     session: AsyncSession,
     menu: Menu,
-    menu_update: MenuUpdatePartial | None = None,
+    menu_update: MenuUpdatePartial,
 ) -> Menu:
     for name, value in menu_update.model_dump(exclude_unset=True).items():
         setattr(menu, name, value)
@@ -56,4 +56,4 @@ async def delete_menu(
     await session.delete(menu)
     await session.commit()
 
-    return {"status": True, "message": "The menu has been deleted"}
+    return {'status': True, 'message': 'The menu has been deleted'}

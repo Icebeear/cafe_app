@@ -7,8 +7,8 @@ from src.core.base import Base
 class Menu(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String)
-    submenus: Mapped[list["SubMenu"]] = relationship(
-        "SubMenu", cascade="all, delete-orphan"
+    submenus: Mapped[list['SubMenu']] = relationship(
+        'SubMenu', cascade='all, delete-orphan'
     )
 
 
@@ -16,16 +16,14 @@ class SubMenu(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String)
     menu_id: Mapped[int] = mapped_column(
-        ForeignKey("menus.id", ondelete="CASCADE")
+        ForeignKey('menu.id', ondelete='CASCADE')
     )
 
 
 class Dish(Base):
-    __tablename__ = "dishes"
-
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String)
     price: Mapped[str] = mapped_column(String)
     submenu_id: Mapped[int] = mapped_column(
-        ForeignKey("submenus.id", ondelete="CASCADE")
+        ForeignKey('submenu.id', ondelete='CASCADE')
     )

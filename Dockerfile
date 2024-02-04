@@ -3,9 +3,9 @@ FROM python:3.10-slim
 SHELL ["/bin/bash", "-c"]
 
 ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1  
+ENV PYTHONUNBUFFERED 1
 
-RUN pip install --upgrade pip  
+RUN pip install --upgrade pip
 
 WORKDIR /cafe_app
 

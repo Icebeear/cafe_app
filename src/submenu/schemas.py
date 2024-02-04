@@ -18,6 +18,6 @@ class SubMenuRead(SubMenuBase):
     dishes_count: int | None = 0
 
 
-class SubMenuUpdatePartial(SubMenuCreate):
+class SubMenuUpdatePartial(BaseModel):
     title: str | None = None
     description: Annotated[str | None, Field(default=None, max_length=512)]

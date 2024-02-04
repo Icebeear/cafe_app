@@ -19,6 +19,6 @@ class MenuRead(MenuBase):
     dishes_count: int | None = 0
 
 
-class MenuUpdatePartial(MenuCreate):
+class MenuUpdatePartial(BaseModel):
     title: str | None = None
     description: Annotated[str | None, Field(default=None, max_length=1024)]

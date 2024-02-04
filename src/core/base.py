@@ -14,7 +14,7 @@ class Base(DeclarativeBase):
         """
         Generate __tablename__ automatically.
         """
-        return f"{cls.__name__.lower()}s"
+        return f'{cls.__name__.lower()}'
 
     id: Mapped[str] = mapped_column(
         UUID(as_uuid=True),

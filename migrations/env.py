@@ -3,12 +3,13 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from src.core.models import *
 from src.core.base import Base
 from src.core.config import settings
 
+# from src.core.models import *
+
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.db_url)
+config.set_main_option('sqlalchemy.url', settings.db_url)
 fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
@@ -17,7 +18,7 @@ target_metadata = Base.metadata
 def run_migrations_online():
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
+        prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
 

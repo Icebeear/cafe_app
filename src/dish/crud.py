@@ -6,8 +6,8 @@ from src.dish.schemas import DishCreate, DishRead, DishUpdatePartial
 
 
 async def create_dish(
-        session: AsyncSession, 
-        dish: DishCreate, 
+        session: AsyncSession,
+        dish: DishCreate,
         submenu: SubMenu
 ) -> DishRead:
     query = (
@@ -26,15 +26,15 @@ async def get_dish_by_title(session: AsyncSession, dish_title: str) -> Dish:
     return result.scalars().first()
 
 
-async def get_dish_by_id(session: AsyncSession, dish_id: int) -> Dish:
+async def get_dish_by_id(session: AsyncSession, dish_id: str) -> Dish:
     query = select(Dish).where(Dish.id == dish_id)
     result = await session.execute(query)
     return result.scalars().first()
 
 
 async def get_dishes(
-    session: AsyncSession, 
-    offset: int = 0, 
+    session: AsyncSession,
+    offset: int = 0,
     limit: int = 100
 ) -> list[Dish]:
     query = select(Dish).offset(offset).limit(limit)
@@ -45,7 +45,7 @@ async def get_dishes(
 async def update_dish_partial(
     session: AsyncSession,
     dish: Dish,
-    dish_update: DishUpdatePartial | None = None,
+    dish_update: DishUpdatePartial,
 ) -> Dish:
     for name, value in dish_update.model_dump(exclude_unset=True).items():
         setattr(dish, name, value)
@@ -61,4 +61,4 @@ async def delete_dish(
     await session.delete(dish)
     await session.commit()
 
-    return {"status": True, "message": "The dish has been deleted"}
+    return {'status': True, 'message': 'The dish has been deleted'}

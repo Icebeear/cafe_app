@@ -7,7 +7,7 @@ from src.submenu.schemas import SubMenuCreate, SubMenuUpdatePartial
 
 async def get_submenu_by_id(
     session: AsyncSession,
-    submenu_id: int,
+    submenu_id: str,
 ) -> SubMenu | None:
     query = select(SubMenu).where(SubMenu.id == submenu_id)
     result = await session.execute(query)
@@ -17,8 +17,10 @@ async def get_submenu_by_id(
 async def get_submenus(
     session: AsyncSession,
     menu: Menu,
+    offset: int = 0,
+    limit: int = 100
 ) -> list[SubMenu]:
-    query = select(SubMenu).where(SubMenu.menu_id == menu.id)
+    query = select(SubMenu).where(SubMenu.menu_id == menu.id).offset(offset).limit(limit)
     result = await session.execute(query)
 
     submenus = result.scalars().all()
@@ -53,13 +55,13 @@ async def delete_submenu(
     await session.delete(submenu)
     await session.commit()
 
-    return {"status": True, "message": "The submenu has been deleted"}
+    return {'status': True, 'message': 'The submenu has been deleted'}
 
 
 async def update_submenu_partial(
     session: AsyncSession,
     submenu: SubMenu,
-    submenu_update: SubMenuUpdatePartial | None = None,
+    submenu_update: SubMenuUpdatePartial,
 ) -> SubMenu:
     for name, value in submenu_update.model_dump(exclude_unset=True).items():
         setattr(submenu, name, value)
