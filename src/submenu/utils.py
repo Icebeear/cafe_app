@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
 from src.core.models import Dish, SubMenu
-from src.redis.utils import get_redis_client
+from src.redis.utils import clear_main_cache, get_redis_client
 from src.submenu.crud import get_submenu_by_id, get_submenu_by_title
 from src.submenu.schemas import SubMenuRead
 
@@ -21,7 +21,9 @@ async def submenu_by_id(
     session: AsyncSession = Depends(get_async_session),
 ) -> SubMenu:
 
-    cache = r.get(f'submenu_{submenu_id}')
+    submenu_key = r.keys(f'*_submenu_{submenu_id}')
+
+    cache = r.get(submenu_key[0]) if submenu_key else None
 
     if cache and request.method == 'GET':
         return SubMenuRead(**json.loads(cache))
@@ -35,7 +37,7 @@ async def submenu_by_id(
     submenu.dishes_count = await count_dishes(session, submenu_id)
 
     if request.method == 'GET':
-        r.setex(f'submenu_{submenu.id}', 600, json.dumps(jsonable_encoder(submenu)))
+        r.setex(f'{submenu.menu_id}_submenu_{submenu.id}', 600, json.dumps(jsonable_encoder(submenu)))
 
     return submenu
 
@@ -62,6 +64,13 @@ async def count_dishes(
     return len(result.scalars().all())
 
 
-async def clear_submenu_cache(submenu_id: str) -> None:
-    r.delete(f'submenu_{submenu_id}')
-    r.delete('all_submenus')
+async def clear_submenu_cache(menu_id: str, submenu_id: str) -> None:
+    await clear_main_cache(r)
+
+    r.delete(f'menu_{menu_id}')
+    r.delete(f'{menu_id}_submenu_{submenu_id}')
+
+    dish_keys = r.keys(f'{submenu_id}_dish_*')
+
+    for key in dish_keys:
+        r.delete(key)

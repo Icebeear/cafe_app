@@ -30,9 +30,10 @@ async def create_menu(
     :param session:
     :return: new_menu
     """
-    new_menu = await crud.create_menu(session, menu)
 
     r.delete('all_menus')
+
+    new_menu = await crud.create_menu(session, menu)
 
     return new_menu
 
@@ -99,7 +100,8 @@ async def update_menu(
     :param session:
     :return: menu
     """
-    await clear_menu_cache(menu.id)
+    r.delete(f'menu_{menu.id}')
+    r.delete('all_menus')
 
     return await crud.update_menu_partial(
         session=session, menu=menu, menu_update=menu_update

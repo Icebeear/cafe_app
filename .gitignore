@@ -3,6 +3,5 @@ venv
 __pycache__
 .mypy_cache
 .pytest_cache
-docker-compose-redis.yml
-docker-compose-test-db.yml
+docker-compose-test.yml
 python_style.md

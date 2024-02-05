@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
 from src.core.models import Menu, SubMenu
-from src.menu.utils import clear_menu_cache, menu_by_id
+from src.menu.utils import menu_by_id
 from src.redis.utils import get_redis_client
 from src.submenu import crud
 from src.submenu.schemas import SubMenuCreate, SubMenuRead, SubMenuUpdatePartial
@@ -34,8 +34,11 @@ async def create_submenu(
     :return: sub_menu
     """
     await check_unique_submenu(submenu.title, session)
+
     r.delete('all_menus')
     r.delete('all_submenus')
+    r.delete(f'menu_{menu.id}')
+
     sub_menu = await crud.create_submenu(session, menu, submenu)
 
     return sub_menu
@@ -76,7 +79,6 @@ async def get_submenus(
     status_code=status.HTTP_200_OK
 )
 async def get_submenu(
-    menu: Menu = Depends(menu_by_id),
     submenu: SubMenu = Depends(submenu_by_id),
 ):
     """
@@ -108,7 +110,8 @@ async def update_submenu(
     :return: submenu
     """
 
-    await clear_submenu_cache(submenu.id)
+    r.delete(f'{submenu.menu_id}_submenu_{submenu.id}')
+    r.delete('all_submenus')
 
     return await crud.update_submenu_partial(
         session=session, submenu=submenu, submenu_update=submenu_update
@@ -117,7 +120,6 @@ async def update_submenu(
 
 @router.delete('/{submenu_id}', status_code=status.HTTP_200_OK)
 async def delete_submenu(
-    menu: Menu = Depends(menu_by_id),
     session: AsyncSession = Depends(get_async_session),
     submenu: SubMenu = Depends(submenu_by_id),
 ):
@@ -129,7 +131,6 @@ async def delete_submenu(
     :return: result
     """
 
-    await clear_menu_cache(menu.id)
-    await clear_submenu_cache(submenu.id)
+    await clear_submenu_cache(submenu.menu_id, submenu.id)
 
     return await crud.delete_submenu(session, submenu)

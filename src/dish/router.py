@@ -43,7 +43,7 @@ async def create_dish(
 
     r.delete('all_dishes')
     await clear_menu_cache(menu.id)
-    await clear_submenu_cache(submenu.id)
+    await clear_submenu_cache(menu.id, submenu.id)
 
     new_dish = await crud.create_dish(session, dish, submenu)
 
@@ -118,7 +118,10 @@ async def update_dish(
     :param session:
     :return: dish
     """
-    await clear_dish_cache(dish.id)
+
+    r.delete(f'{dish.submenu_id}_dish_{dish.id}')
+    r.delete('all_dishes')
+
     return await crud.update_dish_partial(
         session=session, dish=dish, dish_update=dish_update
     )
@@ -137,7 +140,7 @@ async def delete_dish(
     :param session:
     :return: result
     """
-    r.delete('all_menus')
-    r.delete('all_submenus')
-    await clear_dish_cache(dish.id)
+
+    await clear_dish_cache(dish.submenu_id, dish.id)
+
     return await crud.delete_dish(session, dish)

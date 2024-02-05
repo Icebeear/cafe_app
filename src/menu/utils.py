@@ -10,7 +10,7 @@ from src.core.database import get_async_session
 from src.core.models import Dish, Menu, SubMenu
 from src.menu.crud import get_menu_by_id
 from src.menu.schemas import MenuRead
-from src.redis.utils import get_redis_client
+from src.redis.utils import clear_main_cache, get_redis_client
 
 r = get_redis_client()
 
@@ -68,5 +68,24 @@ async def get_submenus_dishes(
 
 
 async def clear_menu_cache(menu_id: str) -> None:
+
+    await clear_main_cache(r)
+
     r.delete(f'menu_{menu_id}')
-    r.delete('all_menus')
+
+    submenu_keys = r.keys(f'{menu_id}*')
+
+    # clear all submenus for target menu
+    submenus = []
+    for key in submenu_keys:
+        r.delete(key)
+        submenus.append(f"{key.split('_')[-1]}*")
+
+    # find all dishes for all submenus
+    dish_keys = []
+    for submenu in submenus:
+        dish_keys.extend(r.keys(submenu))
+
+    # clear all dishes
+    for key in dish_keys:
+        r.delete(key)
