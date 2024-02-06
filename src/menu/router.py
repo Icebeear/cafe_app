@@ -1,17 +1,14 @@
-import json
-
 from fastapi import APIRouter, Depends, status
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import JSONResponse
 
 from src.core.database import get_async_session
 from src.core.models import Menu
+from src.core.schemas import ErrorResponse, SuccessResponse
 from src.menu import crud
 from src.menu.schemas import MenuCreate, MenuRead, MenuUpdatePartial
-from src.menu.utils import clear_menu_cache, menu_by_id
-from src.redis.utils import get_redis_client
-
-r = get_redis_client()
+from src.menu.services import clear_menu_cache, load_all_menus, menu_by_id
+from src.redis.utils import redis
 
 router = APIRouter(tags=['Menu'], prefix='/menus')
 
@@ -19,11 +16,12 @@ router = APIRouter(tags=['Menu'], prefix='/menus')
 @router.post(
     '/',
     response_model=MenuRead,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    summary='Создать меню'
 )
 async def create_menu(
     menu: MenuCreate, session: AsyncSession = Depends(get_async_session)
-):
+) -> MenuRead:
     """
     \f
     :param menu:
@@ -31,7 +29,7 @@ async def create_menu(
     :return: new_menu
     """
 
-    r.delete('all_menus')
+    redis.clear_cache('all_menus')
 
     new_menu = await crud.create_menu(session, menu)
 
@@ -41,13 +39,14 @@ async def create_menu(
 @router.get(
     '/',
     response_model=list[MenuRead],
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary='Получить все меню'
 )
 async def get_menus(
     session: AsyncSession = Depends(get_async_session),
     offset: int = 0,
     limit: int = 100,
-):
+) -> list[MenuRead]:
     """
     \f
     :param session:
@@ -56,24 +55,23 @@ async def get_menus(
     :return: menus
     """
 
-    cache = r.get('all_menus')
-
-    if cache:
-        return json.loads(cache)
-
-    menus = await crud.get_menus(session, offset, limit)
-
-    r.setex('all_menus', 3600, json.dumps(jsonable_encoder(menus)))
+    menus = await load_all_menus(session, offset, limit)
 
     return menus
 
 
 @router.get(
-    '/{menu_id}',
-    response_model=MenuRead,
-    status_code=status.HTTP_200_OK
+    '/{menu_id}', response_model=MenuRead,
+    status_code=status.HTTP_200_OK,
+    summary='Получить меню',
+    responses={
+        404: {
+            'description': 'menu not found',
+            'model': ErrorResponse
+        }
+    }
 )
-async def get_menu(menu: Menu = Depends(menu_by_id)):
+async def get_menu(menu: Menu = Depends(menu_by_id)) -> MenuRead:
     """
     \f
     :param menu_id:
@@ -86,13 +84,20 @@ async def get_menu(menu: Menu = Depends(menu_by_id)):
 @router.patch(
     '/{menu_id}',
     response_model=MenuRead,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary='Обновить меню',
+    responses={
+        404: {
+            'description': 'menu not found',
+            'model': ErrorResponse
+        }
+    }
 )
 async def update_menu(
     menu_update: MenuUpdatePartial,
     menu: Menu = Depends(menu_by_id),
     session: AsyncSession = Depends(get_async_session),
-):
+) -> MenuRead:
     """
     \f
     :param menu_update:
@@ -100,19 +105,31 @@ async def update_menu(
     :param session:
     :return: menu
     """
-    r.delete(f'menu_{menu.id}')
-    r.delete('all_menus')
+    redis.clear_cache(f'menu_{menu.id}', 'all_menus')
 
     return await crud.update_menu_partial(
         session=session, menu=menu, menu_update=menu_update
     )
 
 
-@router.delete('/{menu_id}', status_code=status.HTTP_200_OK)
+@router.delete(
+    '/{menu_id}',
+    status_code=status.HTTP_200_OK,
+    summary='Удалить меню',
+    responses={
+        404: {
+            'description': 'menu not found',
+            'model': ErrorResponse
+        },
+        200: {
+            'model': SuccessResponse
+        }
+    }
+)
 async def delete_menu(
     session: AsyncSession = Depends(get_async_session),
     menu: Menu = Depends(menu_by_id),
-):
+) -> JSONResponse:
     """
     \f
     :param menu_id:

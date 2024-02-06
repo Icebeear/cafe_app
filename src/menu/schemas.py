@@ -1,7 +1,6 @@
 from typing import Annotated
-from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import UUID4, BaseModel, Field
 
 
 class MenuBase(BaseModel):
@@ -14,7 +13,7 @@ class MenuCreate(MenuBase):
 
 
 class MenuRead(MenuBase):
-    id: UUID
+    id: UUID4
     submenus_count: int | None = 0
     dishes_count: int | None = 0
 

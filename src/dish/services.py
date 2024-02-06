@@ -3,19 +3,21 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Path, Request, status
 from fastapi.encoders import jsonable_encoder
+from pydantic import UUID4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_async_session
 from src.core.models import Dish
+from src.dish import crud
 from src.dish.crud import get_dish_by_id, get_dish_by_title
 from src.dish.schemas import DishRead
-from src.redis.utils import clear_main_cache, get_redis_client
+from src.redis.utils import redis
 
-r = get_redis_client()
+r = redis.get_redis_client()
 
 
 async def dish_by_id(
-    dish_id: Annotated[str, Path],
+    dish_id: Annotated[UUID4, Path],
     request: Request,
     session: AsyncSession = Depends(get_async_session),
 ) -> Dish:
@@ -31,12 +33,13 @@ async def dish_by_id(
 
     if not dish:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='dish not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='dish not found'
         )
 
     if request.method == 'GET':
-        r.setex(f'{dish.submenu_id}_dish_{dish.id}', 600, json.dumps(jsonable_encoder(dish)))
+        r.setex(
+            f'{dish.submenu_id}_dish_{dish.id}', 600, json.dumps(jsonable_encoder(dish))
+        )
 
     return dish
 
@@ -45,7 +48,6 @@ async def check_unique_dish(
     session: AsyncSession,
     dish_title: Annotated[str, Path],
 ) -> None:
-
     result = await get_dish_by_title(session, dish_title)
 
     if result:
@@ -56,12 +58,27 @@ async def check_unique_dish(
 
 
 async def clear_dish_cache(submenu_id: str, dish_id: str) -> None:
-    await clear_main_cache(r)
+    redis.clear_main_cache()
 
     menu_key = r.keys(f'*_submenu_{submenu_id}')
 
     menu_id = menu_key[0].split('_')[0] if menu_key else None
 
-    r.delete(f'{submenu_id}_dish_{dish_id}')
-    r.delete(f'menu_{menu_id}')
-    r.delete(f'{menu_id}_submenu_{submenu_id}')
+    redis.clear_cache(
+        f'{submenu_id}_dish_{dish_id}',
+        f'{submenu_id}_dish_{dish_id}',
+        f'{menu_id}_submenu_{submenu_id}',
+    )
+
+
+async def load_all_dishes(session: AsyncSession, offset: int, limit: int) -> list[Dish]:
+    cache = r.get('all_dishes')
+
+    if cache:
+        return json.loads(cache)
+
+    dishes = await crud.get_dishes(session, offset, limit)
+
+    r.setex('all_dishes', 3600, json.dumps(jsonable_encoder(dishes)))
+
+    return dishes

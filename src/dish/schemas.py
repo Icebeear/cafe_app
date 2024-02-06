@@ -1,7 +1,6 @@
 from typing import Annotated
-from uuid import UUID
 
-from pydantic import BaseModel, Field, validator
+from pydantic import UUID4, BaseModel, Field, validator
 
 
 class DishBase(BaseModel):
@@ -19,7 +18,7 @@ class DishCreate(DishBase):
 
 
 class DishRead(DishBase):
-    id: UUID
+    id: UUID4
 
 
 class DishUpdatePartial(BaseModel):

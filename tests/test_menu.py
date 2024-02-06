@@ -1,4 +1,5 @@
 import pytest
+from fastapi import Request
 from httpx import AsyncClient
 
 from tests.utils import reverse
@@ -9,7 +10,7 @@ from tests.utils import reverse
 @pytest.mark.order(2)
 class TestMenuAPI:
     @pytest.fixture
-    async def menu_id(self, ac: AsyncClient, request):
+    async def menu_id(self, ac: AsyncClient, request: Request) -> str:
         menu_title = f'menu_for_submenu_{request.node.name}'
 
         url = reverse('get_menus')
@@ -24,7 +25,7 @@ class TestMenuAPI:
         return response.json()['id']
 
     @pytest.mark.asyncio
-    async def test_menu_create(self, ac: AsyncClient):
+    async def test_menu_create(self, ac: AsyncClient) -> None:
         url = reverse('create_menu')
         response = await ac.post(
             url,
@@ -36,7 +37,7 @@ class TestMenuAPI:
         assert response.status_code == 201
 
     @pytest.mark.asyncio
-    async def test_menu_patch(self, ac: AsyncClient, menu_id):
+    async def test_menu_patch(self, ac: AsyncClient, menu_id: str) -> None:
         url = reverse('update_menu', menu_id=menu_id)
         response = await ac.patch(
             url,
@@ -49,7 +50,7 @@ class TestMenuAPI:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_menu_delete(self, ac: AsyncClient, menu_id):
+    async def test_menu_delete(self, ac: AsyncClient, menu_id: str) -> None:
         url = reverse('delete_menu', menu_id=menu_id)
         response = await ac.delete(
             url,
@@ -58,7 +59,7 @@ class TestMenuAPI:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_menu_get_wrong(self, ac: AsyncClient):
+    async def test_menu_get_wrong(self, ac: AsyncClient) -> None:
         url = reverse('get_menu', menu_id='db37ad5e-04d6-4060-9ca2-f26549757f45')
         response = await ac.get(url)
 
@@ -66,7 +67,7 @@ class TestMenuAPI:
         assert response.json()['detail'] == 'menu not found'
 
     @pytest.mark.asyncio
-    async def test_menu_get_all(self, ac: AsyncClient):
+    async def test_menu_get_all(self, ac: AsyncClient) -> None:
         url = reverse('get_menus')
         response = await ac.get(url)
 

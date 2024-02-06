@@ -6,14 +6,10 @@ from src.dish.schemas import DishCreate, DishRead, DishUpdatePartial
 
 
 async def create_dish(
-        session: AsyncSession,
-        dish: DishCreate,
-        submenu: SubMenu
+    session: AsyncSession, dish: DishCreate, submenu: SubMenu
 ) -> DishRead:
     query = (
-        insert(Dish)
-        .values(**dish.model_dump(), submenu_id=submenu.id)
-        .returning(Dish)
+        insert(Dish).values(**dish.model_dump(), submenu_id=submenu.id).returning(Dish)
     )
     result = await session.execute(query)
     await session.commit()
@@ -33,9 +29,7 @@ async def get_dish_by_id(session: AsyncSession, dish_id: str) -> Dish:
 
 
 async def get_dishes(
-    session: AsyncSession,
-    offset: int = 0,
-    limit: int = 100
+    session: AsyncSession, offset: int = 0, limit: int = 100
 ) -> list[Dish]:
     query = select(Dish).offset(offset).limit(limit)
     result = await session.execute(query)
@@ -57,7 +51,7 @@ async def update_dish_partial(
 async def delete_dish(
     session: AsyncSession,
     dish: Dish,
-) -> dict:
+) -> dict[str, bool | str]:
     await session.delete(dish)
     await session.commit()
 

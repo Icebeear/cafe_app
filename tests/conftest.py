@@ -12,9 +12,9 @@ from main import app
 from src.core.base import Base
 from src.core.config import settings
 from src.core.database import get_async_session
-from src.redis.utils import get_redis_client
+from src.redis.utils import redis
 
-redis = get_redis_client()
+r = redis.get_redis_client()
 metadata = Base.metadata
 
 DATABASE_URL_TEST = settings.test_db_url
@@ -59,4 +59,4 @@ async def ac() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(app=app, base_url='http://test') as ac:
         yield ac
 
-    redis.flushall()
+    r.flushall()

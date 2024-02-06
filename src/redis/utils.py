@@ -1,11 +1,21 @@
 from redis import Redis
 
 
-def get_redis_client() -> Redis:
-    return Redis(host='redis', port=6379, decode_responses=True, encoding='utf-8')
+class CacheCleaner:
+    def __init__(self) -> None:
+        self.redis = Redis(
+            host='localhost', port=6379, decode_responses=True, encoding='utf-8'
+        )
+
+    def get_redis_client(self) -> Redis:
+        return self.redis
+
+    def clear_main_cache(self) -> None:
+        self.clear_cache('all_menus', 'all_submenus', 'all_dishes')
+
+    def clear_cache(self, *args: str | list[str]) -> None:
+        for key in args:
+            self.redis.delete(str(key))
 
 
-async def clear_main_cache(redis: Redis) -> None:
-    redis.delete('all_menus')
-    redis.delete('all_submenus')
-    redis.delete('all_dishes')
+redis = CacheCleaner()

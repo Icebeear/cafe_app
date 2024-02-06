@@ -1,4 +1,5 @@
 import pytest
+from fastapi import Request
 from httpx import AsyncClient
 
 """Проверка crud для dish"""
@@ -7,7 +8,7 @@ from httpx import AsyncClient
 @pytest.mark.order(4)
 class TestDishAPI:
     @pytest.fixture
-    async def dish_fixture(self, ac: AsyncClient, request):
+    async def dish_fixture(self, ac: AsyncClient, request: Request) -> list[str]:
         menu_title = f'menu_for_submenu_{request.node.name}'
         submenu_title = f'submenu_for_test_{request.node.name}'
         dish_title = f'dish_for_test_{request.node.name}'
@@ -44,10 +45,10 @@ class TestDishAPI:
         assert dish.status_code == 201
         dish_id = dish.json()['id']
 
-        return menu_id, submenu_id, dish_id
+        return [menu_id, submenu_id, dish_id]
 
     @pytest.mark.asyncio
-    async def test_dish_create(self, ac: AsyncClient, dish_fixture):
+    async def test_dish_create(self, ac: AsyncClient, dish_fixture: list[str]) -> None:
         dish = await ac.post(
             f'/api/v1/menus/{dish_fixture[0]}/submenus/{dish_fixture[1]}/dishes/',
             json={
@@ -59,7 +60,7 @@ class TestDishAPI:
         assert dish.status_code == 201
 
     @pytest.mark.asyncio
-    async def test_dish_patch(self, ac: AsyncClient, dish_fixture):
+    async def test_dish_patch(self, ac: AsyncClient, dish_fixture: list[str]) -> None:
         response = await ac.patch(
             f'/api/v1/menus/{dish_fixture[0]}/submenus/{dish_fixture[1]}/dishes/{dish_fixture[2]}',
             json={
@@ -72,7 +73,7 @@ class TestDishAPI:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_dish_delete(self, ac: AsyncClient, dish_fixture):
+    async def test_dish_delete(self, ac: AsyncClient, dish_fixture: list[str]) -> None:
         response = await ac.delete(
             f'/api/v1/menus/{dish_fixture[0]}/submenus/{dish_fixture[1]}/dishes/{dish_fixture[2]}',
         )
@@ -80,7 +81,7 @@ class TestDishAPI:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_dish_get_all(self, ac: AsyncClient, dish_fixture):
+    async def test_dish_get_all(self, ac: AsyncClient, dish_fixture: list[str]) -> None:
         dishes = await ac.get(
             f'/api/v1/menus/{dish_fixture[0]}/submenus/{dish_fixture[1]}/dishes/',
         )

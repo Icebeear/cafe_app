@@ -13,15 +13,13 @@ async def create_menu(session: AsyncSession, menu: MenuCreate) -> MenuRead:
 
 
 async def get_menus(
-    session: AsyncSession,
-    offset: int = 0,
-    limit: int = 100
+    session: AsyncSession, offset: int = 0, limit: int = 100
 ) -> list[MenuRead]:
     query = select(Menu).offset(offset).limit(limit)
     result = await session.execute(query)
     menus = result.scalars().all()
 
-    from src.menu.utils import get_submenus_dishes
+    from src.menu.services import get_submenus_dishes
 
     for menu in menus:
         submenus_dishes = await get_submenus_dishes(session, menu.id)
@@ -52,7 +50,7 @@ async def update_menu_partial(
 async def delete_menu(
     session: AsyncSession,
     menu: Menu,
-) -> dict:
+) -> dict[str, bool | str]:
     await session.delete(menu)
     await session.commit()
 

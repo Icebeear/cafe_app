@@ -15,9 +15,7 @@ class Menu(Base):
 class SubMenu(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String)
-    menu_id: Mapped[int] = mapped_column(
-        ForeignKey('menu.id', ondelete='CASCADE')
-    )
+    menu_id: Mapped[int] = mapped_column(ForeignKey('menu.id', ondelete='CASCADE'))
 
 
 class Dish(Base):

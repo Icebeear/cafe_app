@@ -1,19 +1,21 @@
-import json
-
 from fastapi import APIRouter, Depends, status
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import JSONResponse
 
 from src.core.database import get_async_session
 from src.core.models import Dish, Menu, SubMenu
+from src.core.schemas import ErrorResponse, SuccessResponse
 from src.dish import crud
 from src.dish.schemas import DishCreate, DishRead, DishUpdatePartial
-from src.dish.utils import check_unique_dish, clear_dish_cache, dish_by_id
-from src.menu.utils import clear_menu_cache, menu_by_id
-from src.redis.utils import get_redis_client
-from src.submenu.utils import clear_submenu_cache, submenu_by_id
-
-r = get_redis_client()
+from src.dish.services import (
+    check_unique_dish,
+    clear_dish_cache,
+    dish_by_id,
+    load_all_dishes,
+)
+from src.menu.services import clear_menu_cache, menu_by_id
+from src.redis.utils import redis
+from src.submenu.services import clear_submenu_cache, submenu_by_id
 
 router = APIRouter(
     tags=['Dish'], prefix='/menus/{menu_id}/submenus/{submenu_id}/dishes'
@@ -23,14 +25,21 @@ router = APIRouter(
 @router.post(
     '/',
     response_model=DishRead,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    summary='Создать блюдо',
+    responses={
+        409: {
+            'description': 'dish cannot be in 2 submenus at the same time',
+            'model': ErrorResponse
+        }
+    }
 )
 async def create_dish(
     dish: DishCreate,
     menu: Menu = Depends(menu_by_id),
     submenu: SubMenu = Depends(submenu_by_id),
     session: AsyncSession = Depends(get_async_session),
-):
+) -> DishRead:
     """
     \f
     :param dish:
@@ -41,7 +50,7 @@ async def create_dish(
     """
     await check_unique_dish(session, dish.title)
 
-    r.delete('all_dishes')
+    redis.clear_cache('all_dishes')
     await clear_menu_cache(menu.id)
     await clear_submenu_cache(menu.id, submenu.id)
 
@@ -53,13 +62,14 @@ async def create_dish(
 @router.get(
     '/',
     response_model=list[DishRead],
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary='Получить все блюда'
 )
 async def get_dishes(
     session: AsyncSession = Depends(get_async_session),
     offset: int = 0,
     limit: int = 100,
-):
+) -> list[DishRead]:
     """
     \f
     :param session:
@@ -67,14 +77,7 @@ async def get_dishes(
     :param limit:
     :return: dishes
     """
-    cache = r.get('all_dishes')
-
-    if cache:
-        return json.loads(cache)
-
-    dishes = await crud.get_dishes(session, offset, limit)
-
-    r.setex('all_dishes', 3600, json.dumps(jsonable_encoder(dishes)))
+    dishes = await load_all_dishes(session, offset, limit)
 
     return dishes
 
@@ -82,12 +85,19 @@ async def get_dishes(
 @router.get(
     '/{dish_id}',
     response_model=DishRead,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary='Получить блюдо',
+    responses={
+        404: {
+            'description': 'dish not found',
+            'model': ErrorResponse
+        }
+    }
 )
 async def get_dish(
     session: AsyncSession = Depends(get_async_session),
     dish: Dish = Depends(dish_by_id),
-):
+) -> DishRead:
     """
     \f
     :param menu_id:
@@ -102,13 +112,20 @@ async def get_dish(
 @router.patch(
     '/{dish_id}',
     response_model=DishRead,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary='Обновить блюдо',
+    responses={
+        404: {
+            'description': 'dish not found',
+            'model': ErrorResponse
+        }
+    }
 )
 async def update_dish(
     dish_update: DishUpdatePartial,
     dish: Dish = Depends(dish_by_id),
     session: AsyncSession = Depends(get_async_session),
-):
+) -> DishRead:
     """
     \f
     :param menu_id:
@@ -119,19 +136,31 @@ async def update_dish(
     :return: dish
     """
 
-    r.delete(f'{dish.submenu_id}_dish_{dish.id}')
-    r.delete('all_dishes')
+    redis.clear_cache(f'{dish.submenu_id}_dish_{dish.id}', 'all_dishes')
 
     return await crud.update_dish_partial(
         session=session, dish=dish, dish_update=dish_update
     )
 
 
-@router.delete('/{dish_id}', status_code=status.HTTP_200_OK)
+@router.delete(
+    '/{dish_id}',
+    status_code=status.HTTP_200_OK,
+    summary='Удалить блюдо',
+    responses={
+        404: {
+            'description': 'dish not found',
+            'model': ErrorResponse
+        },
+        200: {
+            'model': SuccessResponse
+        }
+    }
+)
 async def delete_dish(
     dish: Dish = Depends(dish_by_id),
     session: AsyncSession = Depends(get_async_session),
-):
+) -> JSONResponse:
     """
     \f
     :param menu_id:

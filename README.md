@@ -52,6 +52,12 @@ Cafe app - это простой HTTP сервис для ресторана / �
 ## Running Dev
     docker-compose --env-file .env.dev up -d
 
+#### Запуск проекта
+    docker-compose --env-file .env.dev up -d app db redis
+
+#### Запуск тестов
+    docker-compose --env-file .env.dev up -d test-db tests
+
 #### Документация находится по пути:
     http://localhost:8000/docs
 

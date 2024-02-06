@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,13 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
 from src.dish.router import router as dish_router
 from src.menu.router import router as menu_router
-from src.redis.utils import get_redis_client
+from src.redis.utils import redis
 from src.submenu.router import router as submenu_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    r = get_redis_client()
+async def lifespan(app: FastAPI) -> AsyncGenerator:
+    r = redis.get_redis_client()
     yield
     r.close()
 
@@ -21,7 +22,7 @@ app = FastAPI(
     title='Cafe API',
     description='Home work for internship',
     version='0.0.1',
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 

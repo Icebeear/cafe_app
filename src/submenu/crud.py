@@ -15,17 +15,16 @@ async def get_submenu_by_id(
 
 
 async def get_submenus(
-    session: AsyncSession,
-    menu: Menu,
-    offset: int = 0,
-    limit: int = 100
+    session: AsyncSession, menu: Menu, offset: int = 0, limit: int = 100
 ) -> list[SubMenu]:
-    query = select(SubMenu).where(SubMenu.menu_id == menu.id).offset(offset).limit(limit)
+    query = (
+        select(SubMenu).where(SubMenu.menu_id == menu.id).offset(offset).limit(limit)
+    )
     result = await session.execute(query)
 
     submenus = result.scalars().all()
 
-    from src.submenu.utils import count_dishes
+    from src.submenu.services import count_dishes
 
     for sub_menu in submenus:
         sub_menu.dishes_count = await count_dishes(session, sub_menu.id)
@@ -48,16 +47,6 @@ async def create_submenu(
     return result.scalars().first()
 
 
-async def delete_submenu(
-    session: AsyncSession,
-    submenu: SubMenu,
-) -> dict:
-    await session.delete(submenu)
-    await session.commit()
-
-    return {'status': True, 'message': 'The submenu has been deleted'}
-
-
 async def update_submenu_partial(
     session: AsyncSession,
     submenu: SubMenu,
@@ -68,6 +57,16 @@ async def update_submenu_partial(
     await session.commit()
 
     return submenu
+
+
+async def delete_submenu(
+    session: AsyncSession,
+    submenu: SubMenu,
+) -> dict[str, bool | str]:
+    await session.delete(submenu)
+    await session.commit()
+
+    return {'status': True, 'message': 'The submenu has been deleted'}
 
 
 async def get_submenu_by_title(

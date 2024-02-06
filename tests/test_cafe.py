@@ -14,7 +14,7 @@ class TestSubMenuDishAPI:
     """create menu"""
 
     @pytest.mark.asyncio
-    async def test_mainmenu_create(self, ac: AsyncClient):
+    async def test_mainmenu_create(self, ac: AsyncClient) -> None:
         global menu_id
         response = await ac.post(
             '/api/v1/menus/',
@@ -30,7 +30,7 @@ class TestSubMenuDishAPI:
     """ create submenu """
 
     @pytest.mark.asyncio
-    async def test_mainsubmenu_create(self, ac: AsyncClient):
+    async def test_mainsubmenu_create(self, ac: AsyncClient) -> None:
         global submenu_id
         response = await ac.post(
             f'/api/v1/menus/{menu_id}/submenus/',
@@ -45,7 +45,7 @@ class TestSubMenuDishAPI:
     """ create 1 dish """
 
     @pytest.mark.asyncio
-    async def test_dish_create_1(self, ac: AsyncClient):
+    async def test_dish_create_1(self, ac: AsyncClient) -> None:
         response = await ac.post(
             f'api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/',
             json={
@@ -60,7 +60,7 @@ class TestSubMenuDishAPI:
     """ create 2 dish """
 
     @pytest.mark.asyncio
-    async def test_dish_create_2(self, ac: AsyncClient):
+    async def test_dish_create_2(self, ac: AsyncClient) -> None:
         response = await ac.post(
             f'api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/',
             json={
@@ -75,7 +75,7 @@ class TestSubMenuDishAPI:
     """ check target menu """
 
     @pytest.mark.asyncio
-    async def test_mainmenu_get(self, ac: AsyncClient):
+    async def test_mainmenu_get(self, ac: AsyncClient) -> None:
         response = await ac.get(f'/api/v1/menus/{menu_id}')
 
         all_data = response.json()
@@ -89,7 +89,7 @@ class TestSubMenuDishAPI:
     """ check target submenu """
 
     @pytest.mark.asyncio
-    async def test_mainsubmenu_get(self, ac: AsyncClient):
+    async def test_mainsubmenu_get(self, ac: AsyncClient) -> None:
         response = await ac.get(f'/api/v1/menus/{menu_id}/submenus/{submenu_id}')
 
         all_data = response.json()
@@ -102,7 +102,7 @@ class TestSubMenuDishAPI:
     """ delete submenu """
 
     @pytest.mark.asyncio
-    async def test_mainsubmenu_delete(self, ac: AsyncClient):
+    async def test_mainsubmenu_delete(self, ac: AsyncClient) -> None:
         response = await ac.delete(
             f'/api/v1/menus/{menu_id}/submenus/{submenu_id}',
         )
@@ -112,7 +112,7 @@ class TestSubMenuDishAPI:
     """ check all submenus """
 
     @pytest.mark.asyncio
-    async def test_mainsubmenu_get_all(self, ac: AsyncClient):
+    async def test_mainsubmenu_get_all(self, ac: AsyncClient) -> None:
         response = await ac.get(
             f'/api/v1/menus/{menu_id}/submenus/',
         )
@@ -123,7 +123,7 @@ class TestSubMenuDishAPI:
     """ check all dishes """
 
     @pytest.mark.asyncio
-    async def test_dishes_get_all(self, ac: AsyncClient):
+    async def test_dishes_get_all(self, ac: AsyncClient) -> None:
         response = await ac.get(
             f'/api/v1/menus/{menu_id}/submenus/{submenu_id}/dishes/',
         )
@@ -134,7 +134,7 @@ class TestSubMenuDishAPI:
     """ check target menu """
 
     @pytest.mark.asyncio
-    async def test_mainmenu_get_2(self, ac: AsyncClient):
+    async def test_mainmenu_get_2(self, ac: AsyncClient) -> None:
         response = await ac.get(f'/api/v1/menus/{menu_id}')
 
         all_data = response.json()
@@ -148,7 +148,7 @@ class TestSubMenuDishAPI:
     """ delete menu """
 
     @pytest.mark.asyncio
-    async def test_mainmenu_delete(self, ac: AsyncClient):
+    async def test_mainmenu_delete(self, ac: AsyncClient) -> None:
         response = await ac.delete(
             f'/api/v1/menus/{menu_id}',
         )
@@ -158,7 +158,7 @@ class TestSubMenuDishAPI:
     """ check all menus """
 
     @pytest.mark.asyncio
-    async def test_mainmenu_get_all(self, ac: AsyncClient):
+    async def test_mainmenu_get_all(self, ac: AsyncClient) -> None:
         response = await ac.get('api/v1/menus/')
 
         assert response.status_code == 200
