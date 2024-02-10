@@ -41,6 +41,8 @@ async def dish_by_id(
             f'{dish.submenu_id}_dish_{dish.id}', 600, json.dumps(jsonable_encoder(dish))
         )
 
+    dish.price = await get_new_dish_price(dish)
+
     return dish
 
 
@@ -57,7 +59,7 @@ async def check_unique_dish(
         )
 
 
-async def clear_dish_cache(submenu_id: str, dish_id: str) -> None:
+def clear_dish_cache(submenu_id: str, dish_id: str) -> None:
     redis.clear_main_cache()
 
     menu_key = r.keys(f'*_submenu_{submenu_id}')
@@ -73,12 +75,29 @@ async def clear_dish_cache(submenu_id: str, dish_id: str) -> None:
 
 async def load_all_dishes(session: AsyncSession, offset: int, limit: int) -> list[Dish]:
     cache = r.get('all_dishes')
+    params = r.get('dishes_params')
 
-    if cache:
+    if cache and params == f'{offset}_{limit}':
         return json.loads(cache)
 
     dishes = await crud.get_dishes(session, offset, limit)
 
+    for dish in dishes:
+        dish.price = await get_new_dish_price(dish)
+
     r.setex('all_dishes', 3600, json.dumps(jsonable_encoder(dishes)))
+    r.setex('dishes_params', 3600, f'{offset}_{limit}')
 
     return dishes
+
+
+async def get_new_dish_price(dish: Dish) -> str:
+    discounts = r.get('discounts')
+    if discounts:
+        discounts = json.loads(discounts)
+        if str(dish.id) in discounts:
+            discount = discounts[str(dish.id)]
+            if discount != 'nan':
+                return str(float(dish.price) - float(dish.price) * (float(discount) / 100))
+
+    return dish.price

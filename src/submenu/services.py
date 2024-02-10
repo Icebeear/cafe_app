@@ -69,7 +69,7 @@ async def count_dishes(
     return len(result.scalars().all())
 
 
-async def clear_submenu_cache(menu_id: str, submenu_id: str) -> None:
+def clear_submenu_cache(menu_id: str, submenu_id: str) -> None:
     redis.clear_main_cache()
 
     redis.clear_cache(f'menu_{menu_id}', f'{menu_id}_submenu_{submenu_id}')
@@ -82,12 +82,14 @@ async def clear_submenu_cache(menu_id: str, submenu_id: str) -> None:
 
 async def load_all_submenus(session: AsyncSession, menu: Menu, offset: int, limit: int) -> list[SubMenu]:
     cache = r.get('all_submenus')
+    params = r.get('submenus_params')
 
-    if cache:
+    if cache and params == f'{offset}_{limit}':
         return json.loads(cache)
 
     sub_menus = await crud.get_submenus(session, menu, offset, limit)
 
     r.setex('all_submenus', 3600, json.dumps(jsonable_encoder(sub_menus)))
+    r.setex('submenus_params', 3600, f'{offset}_{limit}')
 
     return sub_menus

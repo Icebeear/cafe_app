@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
@@ -33,6 +33,7 @@ router = APIRouter(tags=['Submenu'], prefix='/menus/{menu_id}/submenus')
 )
 async def create_submenu(
     submenu: SubMenuCreate,
+    background_tasks: BackgroundTasks,
     menu: Menu = Depends(menu_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> SubMenuRead:
@@ -45,7 +46,13 @@ async def create_submenu(
     """
     await check_unique_submenu(submenu.title, session)
 
-    redis.clear_cache('all_menus', 'all_submenus', f'menu_{menu.id}')
+    background_tasks.add_task(
+        redis.clear_cache,
+        'all_menus',
+        'all_submenus',
+        f'menu_{menu.id}',
+        'all_menus_nested'
+    )
 
     sub_menu = await crud.create_submenu(session, menu, submenu)
 
@@ -115,6 +122,7 @@ async def get_submenu(
 )
 async def update_submenu(
     submenu_update: SubMenuUpdatePartial,
+    background_tasks: BackgroundTasks,
     submenu: SubMenu = Depends(submenu_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> SubMenuRead:
@@ -127,7 +135,11 @@ async def update_submenu(
     :return: submenu
     """
 
-    redis.clear_cache(f'{submenu.menu_id}_submenu_{submenu.id}', 'all_submenus')
+    background_tasks.add_task(
+        redis.clear_cache,
+        f'{submenu.menu_id}_submenu_{submenu.id}',
+        'all_submenus'
+    )
 
     return await crud.update_submenu_partial(
         session=session, submenu=submenu, submenu_update=submenu_update
@@ -149,6 +161,7 @@ async def update_submenu(
     }
 )
 async def delete_submenu(
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_async_session),
     submenu: SubMenu = Depends(submenu_by_id),
 ) -> JSONResponse:
@@ -160,6 +173,6 @@ async def delete_submenu(
     :return: result
     """
 
-    await clear_submenu_cache(submenu.menu_id, submenu.id)
+    background_tasks.add_task(clear_submenu_cache, submenu.menu_id, submenu.id)
 
     return await crud.delete_submenu(session, submenu)

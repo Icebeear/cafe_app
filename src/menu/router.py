@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
@@ -6,8 +6,14 @@ from src.core.database import get_async_session
 from src.core.models import Menu
 from src.core.schemas import ErrorResponse, SuccessResponse
 from src.menu import crud
-from src.menu.schemas import MenuCreate, MenuRead, MenuUpdatePartial
-from src.menu.services import clear_menu_cache, load_all_menus, menu_by_id
+from src.menu.schemas import MenuCreate, MenuRead, MenuReadNested, MenuUpdatePartial
+from src.menu.services import (
+    check_unique_menu,
+    clear_menu_cache,
+    load_all_menus,
+    load_all_menus_nested,
+    menu_by_id,
+)
 from src.redis.utils import redis
 
 router = APIRouter(tags=['Menu'], prefix='/menus')
@@ -17,10 +23,12 @@ router = APIRouter(tags=['Menu'], prefix='/menus')
     '/',
     response_model=MenuRead,
     status_code=status.HTTP_201_CREATED,
-    summary='Создать меню'
+    summary='Создать меню',
 )
 async def create_menu(
-    menu: MenuCreate, session: AsyncSession = Depends(get_async_session)
+    menu: MenuCreate,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_async_session)
 ) -> MenuRead:
     """
     \f
@@ -28,8 +36,9 @@ async def create_menu(
     :param session:
     :return: new_menu
     """
+    await check_unique_menu(menu.title, session)
 
-    redis.clear_cache('all_menus')
+    background_tasks.add_task(redis.clear_cache, 'all_menus', 'all_menus_nested')
 
     new_menu = await crud.create_menu(session, menu)
 
@@ -40,7 +49,7 @@ async def create_menu(
     '/',
     response_model=list[MenuRead],
     status_code=status.HTTP_200_OK,
-    summary='Получить все меню'
+    summary='Получить все меню',
 )
 async def get_menus(
     session: AsyncSession = Depends(get_async_session),
@@ -58,6 +67,30 @@ async def get_menus(
     menus = await load_all_menus(session, offset, limit)
 
     return menus
+
+
+@router.get(
+    '/nested',
+    response_model=list[MenuReadNested],
+    status_code=status.HTTP_200_OK,
+    summary='Получить все меню со всеми подменю и блюдами',
+)
+async def get_menus_nested(
+    session: AsyncSession = Depends(get_async_session),
+    offset: int = 0,
+    limit: int = 100,
+) -> list[MenuReadNested]:
+    """
+    \f
+    :param session:
+    :param offset:
+    :param limit:
+    :return: menus
+    """
+
+    menus_nested = await load_all_menus_nested(session, offset, limit)
+
+    return menus_nested
 
 
 @router.get(
@@ -95,6 +128,7 @@ async def get_menu(menu: Menu = Depends(menu_by_id)) -> MenuRead:
 )
 async def update_menu(
     menu_update: MenuUpdatePartial,
+    background_tasks: BackgroundTasks,
     menu: Menu = Depends(menu_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> MenuRead:
@@ -105,7 +139,13 @@ async def update_menu(
     :param session:
     :return: menu
     """
-    redis.clear_cache(f'menu_{menu.id}', 'all_menus')
+
+    background_tasks.add_task(
+        redis.clear_cache,
+        f'menu_{menu.id}',
+        'all_menus',
+        'all_menus_nested'
+    )
 
     return await crud.update_menu_partial(
         session=session, menu=menu, menu_update=menu_update
@@ -127,6 +167,7 @@ async def update_menu(
     }
 )
 async def delete_menu(
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_async_session),
     menu: Menu = Depends(menu_by_id),
 ) -> JSONResponse:
@@ -136,6 +177,7 @@ async def delete_menu(
     :param session:
     :return: result
     """
-    await clear_menu_cache(menu.id)
+
+    background_tasks.add_task(clear_menu_cache, menu.id)
 
     return await crud.delete_menu(session, menu)

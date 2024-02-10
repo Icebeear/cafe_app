@@ -73,11 +73,58 @@ services:
     image: redis:7.2-rc1-alpine
     restart: on-failure
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:${REDIS_PORT}
     expose:
-      - 6379
+      - ${REDIS_PORT}
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       interval: 1s
       timeout: 3s
       retries: 5
+
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management-alpine
+    ports:
+        - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+
+  celery:
+    container_name: celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A tasks.tasks worker --loglevel=INFO --pool=solo
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    env_file:
+      - .env.dev
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+
+  celery-beat:
+    container_name: celery-beat
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A tasks.tasks beat -l info
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    env_file:
+      - .env.dev
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

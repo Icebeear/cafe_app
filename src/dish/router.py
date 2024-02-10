@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
@@ -36,6 +36,7 @@ router = APIRouter(
 )
 async def create_dish(
     dish: DishCreate,
+    background_tasks: BackgroundTasks,
     menu: Menu = Depends(menu_by_id),
     submenu: SubMenu = Depends(submenu_by_id),
     session: AsyncSession = Depends(get_async_session),
@@ -50,9 +51,9 @@ async def create_dish(
     """
     await check_unique_dish(session, dish.title)
 
-    redis.clear_cache('all_dishes')
-    await clear_menu_cache(menu.id)
-    await clear_submenu_cache(menu.id, submenu.id)
+    background_tasks.add_task(redis.clear_cache, 'all_dishes')
+    background_tasks.add_task(clear_menu_cache, menu.id)
+    background_tasks.add_task(clear_submenu_cache, menu.id, submenu.id)
 
     new_dish = await crud.create_dish(session, dish, submenu)
 
@@ -123,6 +124,7 @@ async def get_dish(
 )
 async def update_dish(
     dish_update: DishUpdatePartial,
+    background_tasks: BackgroundTasks,
     dish: Dish = Depends(dish_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> DishRead:
@@ -136,7 +138,12 @@ async def update_dish(
     :return: dish
     """
 
-    redis.clear_cache(f'{dish.submenu_id}_dish_{dish.id}', 'all_dishes')
+    background_tasks.add_task(
+        redis.clear_cache,
+        f'{dish.submenu_id}_dish_{dish.id}',
+        'all_dishes',
+        'all_menus_nested'
+    )
 
     return await crud.update_dish_partial(
         session=session, dish=dish, dish_update=dish_update
@@ -158,6 +165,7 @@ async def update_dish(
     }
 )
 async def delete_dish(
+    background_tasks: BackgroundTasks,
     dish: Dish = Depends(dish_by_id),
     session: AsyncSession = Depends(get_async_session),
 ) -> JSONResponse:
@@ -170,6 +178,6 @@ async def delete_dish(
     :return: result
     """
 
-    await clear_dish_cache(dish.submenu_id, dish.id)
+    background_tasks.add_task(clear_dish_cache, dish.submenu_id, dish.id)
 
     return await crud.delete_dish(session, dish)

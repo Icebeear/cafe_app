@@ -11,7 +11,7 @@ class CacheCleaner:
         return self.redis
 
     def clear_main_cache(self) -> None:
-        self.clear_cache('all_menus', 'all_submenus', 'all_dishes')
+        self.clear_cache('all_menus', 'all_submenus', 'all_dishes', 'all_menus_nested')
 
     def clear_cache(self, *args: str | list[str]) -> None:
         for key in args:

@@ -2,6 +2,8 @@ from typing import Annotated
 
 from pydantic import UUID4, BaseModel, Field
 
+from src.submenu.schemas import SubMenuReadNested
+
 
 class MenuBase(BaseModel):
     title: str
@@ -21,3 +23,8 @@ class MenuRead(MenuBase):
 class MenuUpdatePartial(BaseModel):
     title: str | None = None
     description: Annotated[str | None, Field(default=None, max_length=1024)]
+
+
+class MenuReadNested(MenuBase):
+    id: UUID4
+    submenus: list[SubMenuReadNested] | None

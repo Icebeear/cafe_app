@@ -5,3 +5,7 @@ venv
 **/.pytest_cache
 docker-compose-test.yml
 python_style.md
+**/celerybeat-schedule.*
+google_local.py
+safe.py
+google_sheet.py

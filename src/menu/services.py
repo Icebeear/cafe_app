@@ -7,12 +7,13 @@ from pydantic import UUID4
 from sqlalchemy import func, select
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.core.database import get_async_session
 from src.core.models import Dish, Menu, SubMenu
 from src.menu import crud
-from src.menu.crud import get_menu_by_id
-from src.menu.schemas import MenuRead
+from src.menu.crud import get_menu_by_id, get_menu_by_title
+from src.menu.schemas import MenuRead, MenuReadNested
 from src.redis.utils import redis
 
 r = redis.get_redis_client()
@@ -46,6 +47,19 @@ async def menu_by_id(
     return menu
 
 
+async def check_unique_menu(
+    menu_title: Annotated[str, Path],
+    session: AsyncSession,
+) -> None:
+    result = await get_menu_by_title(session, menu_title)
+
+    if result:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='menu with that title already exists',
+        )
+
+
 async def get_submenus_dishes(
     session: AsyncSession,
     menu_id: Annotated[str, Path],
@@ -69,7 +83,7 @@ async def get_submenus_dishes(
     return row
 
 
-async def clear_menu_cache(menu_id: str) -> None:
+def clear_menu_cache(menu_id: str) -> None:
     redis.clear_main_cache()
 
     redis.clear_cache(f'menu_{menu_id}')
@@ -94,12 +108,35 @@ async def clear_menu_cache(menu_id: str) -> None:
 
 async def load_all_menus(session: AsyncSession, offset: int, limit: int) -> list[Menu]:
     cache = r.get('all_menus')
+    params = r.get('menus_params')
 
-    if cache:
+    if cache and params == f'{offset}_{limit}':
         return json.loads(cache)
 
     menus = await crud.get_menus(session, offset, limit)
 
     r.setex('all_menus', 3600, json.dumps(jsonable_encoder(menus)))
+    r.setex('menus_params', 3600, f'{offset}_{limit}')
 
     return menus
+
+
+async def load_all_menus_nested(session: AsyncSession, offset: int, limit: int) -> list[MenuReadNested]:
+    cache = r.get('all_menus_nested')
+    params = r.get('menus_nested_params')
+
+    if cache and params == f'{offset}_{limit}':
+        return json.loads(cache)
+
+    query = select(Menu).options(
+        selectinload(Menu.submenus).selectinload(SubMenu.dishes)
+    ).offset(offset).limit(limit)
+
+    result = await session.execute(query)
+
+    nested_menus = result.scalars().all()
+
+    r.setex('all_menus_nested', 6000, json.dumps(jsonable_encoder(nested_menus)))
+    r.setex('menus_nested_params', 3600, f'{offset}_{limit}')
+
+    return nested_menus

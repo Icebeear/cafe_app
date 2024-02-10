@@ -86,6 +86,18 @@ class TestSubMenuDishAPI:
         assert all_data['submenus_count'] == 1
         assert all_data['dishes_count'] == 2
 
+    """ check nested menus """
+
+    @pytest.mark.asyncio
+    async def test_menus_nested_get(self, ac: AsyncClient) -> None:
+        response = await ac.get('/api/v1/menus/nested')
+
+        all_data = response.json()
+        assert response.status_code == 200
+        assert len(all_data) == 1
+        assert len(all_data[0]['submenus']) == 1
+        assert len(all_data[0]['submenus'][0]['dishes']) == 2
+
     """ check target submenu """
 
     @pytest.mark.asyncio
@@ -108,6 +120,17 @@ class TestSubMenuDishAPI:
         )
 
         assert response.status_code == 200
+
+    """ check nested menus """
+
+    @pytest.mark.asyncio
+    async def test_menus_nested_get2(self, ac: AsyncClient) -> None:
+        response = await ac.get('/api/v1/menus/nested')
+
+        all_data = response.json()
+        assert response.status_code == 200
+        assert len(all_data) == 1
+        assert len(all_data[0]['submenus']) == 0
 
     """ check all submenus """
 
@@ -163,3 +186,13 @@ class TestSubMenuDishAPI:
 
         assert response.status_code == 200
         assert response.json() == []
+
+    """ check nested menus """
+
+    @pytest.mark.asyncio
+    async def test_menus_nested_get3(self, ac: AsyncClient) -> None:
+        response = await ac.get('/api/v1/menus/nested')
+
+        all_data = response.json()
+        assert response.status_code == 200
+        assert len(all_data) == 0
