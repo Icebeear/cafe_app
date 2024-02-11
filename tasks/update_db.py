@@ -286,7 +286,7 @@ async def update_db_online() -> None:
     docker: app:8000
     '''
 
-    base_url = 'http://127.0.0.1:8000/api/v1'
+    base_url = 'http://app:8000/api/v1'
 
     dishes_ids = []
     menus_ids = []
