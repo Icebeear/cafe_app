@@ -4,7 +4,7 @@ from redis import Redis
 class CacheCleaner:
     def __init__(self) -> None:
         self.redis = Redis(
-            host='redis', port=6379, decode_responses=True, encoding='utf-8'
+            host='localhost', port=6379, decode_responses=True, encoding='utf-8'
         )
 
     def get_redis_client(self) -> Redis:

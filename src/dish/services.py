@@ -93,11 +93,13 @@ async def load_all_dishes(session: AsyncSession, offset: int, limit: int) -> lis
 
 async def get_new_dish_price(dish: Dish) -> str:
     discounts = r.get('discounts')
+    dish_id = str(dish.id)
+
     if discounts:
         discounts = json.loads(discounts)
-        if str(dish.id) in discounts:
-            discount = discounts[str(dish.id)]
-            if discount != 'nan':
-                return str(float(dish.price) - float(dish.price) * (float(discount) / 100))
+        if dish_id in discounts:
+            discount = discounts[dish_id]
+
+            return str(float(dish.price) - float(dish.price) * (discount / 100))
 
     return dish.price
