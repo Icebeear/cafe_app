@@ -99,7 +99,7 @@ async def update_menu(menu_id: str, google_menu: dict[str, Any]) -> None:
             await update_all_data(menu_id, google_menu)
 
 
-async def create_all_data(menu_id: str, google_menu: dict[str, Any]):
+async def create_all_data(menu_id: str, google_menu: dict[str, Any]) -> None:
     await update_sheet_values('A', google_menu['index'], menu_id)
 
     for google_submenu in google_menu['submenus']:
@@ -129,7 +129,7 @@ async def create_all_data(menu_id: str, google_menu: dict[str, Any]):
                 await update_sheet_values('C', google_dish['index'], dish_id)
 
 
-async def update_all_data(menu_id: str, google_menu: dict[str, Any]):
+async def update_all_data(menu_id: str, google_menu: dict[str, Any]) -> None:
     submenus = await fetch(f'{base_url}/menus/{menu_id}/submenus/')
 
     submenus_ids = [submenu['id'] for submenu in submenus] or []
