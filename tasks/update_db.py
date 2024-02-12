@@ -4,6 +4,7 @@ from typing import Any
 
 import aiohttp
 import pandas as pd
+from aiohttp import ClientResponse
 from fastapi.encoders import jsonable_encoder
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -20,25 +21,25 @@ spreadsheet_id: str
 sheet: Any
 
 
-async def post_request(url, json):
+async def post_request(url: str, json: dict[str, Any]) -> ClientResponse:
     async with aiohttp.ClientSession() as session:
         response = await session.post(url, json=json)
         return response
 
 
-async def patch_request(url, json):
+async def patch_request(url: str, json: dict[str, Any]) -> ClientResponse:
     async with aiohttp.ClientSession() as session:
         response = await session.patch(url, json=json)
         return response
 
 
-async def delete_request(url):
+async def delete_request(url: str) -> ClientResponse:
     async with aiohttp.ClientSession() as session:
         response = await session.delete(url)
         return response
 
 
-async def fetch(url):
+async def fetch(url: str) -> ClientResponse:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
@@ -47,7 +48,7 @@ async def fetch(url):
                 return response
 
 
-async def update_sheet_values(table: str, row: int, values: str):
+async def update_sheet_values(table: str, row: int, values: str) -> None:
     sheet.values().update(
         spreadsheetId=spreadsheet_id,
         range=f'sheet1!{table}{row + 1}',
@@ -56,7 +57,7 @@ async def update_sheet_values(table: str, row: int, values: str):
     ).execute()
 
 
-async def update_menu(menu_id, google_menu):
+async def update_menu(menu_id: str, google_menu: dict[str, Any]) -> None:
     response = await fetch(f'{base_url}/menus/{menu_id}')
 
     '''
@@ -98,7 +99,7 @@ async def update_menu(menu_id, google_menu):
             await update_all_data(menu_id, google_menu)
 
 
-async def create_all_data(menu_id, google_menu):
+async def create_all_data(menu_id: str, google_menu: dict[str, Any]):
     await update_sheet_values('A', google_menu['index'], menu_id)
 
     for google_submenu in google_menu['submenus']:
@@ -128,7 +129,7 @@ async def create_all_data(menu_id, google_menu):
                 await update_sheet_values('C', google_dish['index'], dish_id)
 
 
-async def update_all_data(menu_id, google_menu):
+async def update_all_data(menu_id: str, google_menu: dict[str, Any]):
     submenus = await fetch(f'{base_url}/menus/{menu_id}/submenus/')
 
     submenus_ids = [submenu['id'] for submenu in submenus] or []
