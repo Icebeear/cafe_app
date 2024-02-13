@@ -8,7 +8,7 @@ from src.submenu.schemas import SubMenuCreate, SubMenuUpdatePartial
 async def get_submenu_by_id(
     session: AsyncSession,
     submenu_id: str,
-) -> SubMenu | None:
+) -> SubMenu:
     query = select(SubMenu).where(SubMenu.id == submenu_id)
     result = await session.execute(query)
     return result.scalars().first()

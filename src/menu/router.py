@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 from src.core.database import get_async_session
 from src.core.models import Menu
 from src.core.schemas import ErrorResponse, SuccessResponse
+from src.core.services import create_background_task
 from src.menu import crud
 from src.menu.schemas import MenuCreate, MenuRead, MenuReadNested, MenuUpdatePartial
 from src.menu.services import (
@@ -38,7 +39,7 @@ async def create_menu(
     """
     await check_unique_menu(menu.title, session)
 
-    background_tasks.add_task(redis.clear_cache, 'all_menus', 'all_menus_nested')
+    await create_background_task(background_tasks, redis.clear_cache, 'all_menus', 'all_menus_nested')
 
     new_menu = await crud.create_menu(session, menu)
 
@@ -139,8 +140,8 @@ async def update_menu(
     :param session:
     :return: menu
     """
-
-    background_tasks.add_task(
+    await create_background_task(
+        background_tasks,
         redis.clear_cache,
         f'menu_{menu.id}',
         'all_menus',
@@ -177,7 +178,6 @@ async def delete_menu(
     :param session:
     :return: result
     """
-
-    background_tasks.add_task(clear_menu_cache, menu.id)
+    await create_background_task(background_tasks, clear_menu_cache, menu.id)
 
     return await crud.delete_menu(session, menu)

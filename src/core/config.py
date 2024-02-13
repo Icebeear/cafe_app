@@ -20,6 +20,7 @@ DB_NAME_TEST = os.environ.get('DB_NAME_TEST')
 DB_USER_TEST = os.environ.get('DB_USER_TEST')
 DB_PASS_TEST = os.environ.get('DB_PASS_TEST')
 
+GOOGLE_SHEET_URL = os.environ.get('GOOGLE_SHEET_URL')
 
 BASE_DIR = Path(__file__).parent.parent
 
@@ -43,6 +44,8 @@ class AppSettings(BaseSettings):
     api_v1_prefix: str = '/api/v1'
     db_url: str = f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?async_fallback=True'
     test_db_url: str = f'postgresql+asyncpg://{DB_USER_TEST}:{DB_PASS_TEST}@{DB_HOST_TEST}:{DB_PORT_TEST}/{DB_NAME_TEST}?async_fallback=True'
+
+    google_sheet_url: str | None = GOOGLE_SHEET_URL
 
     cors_allow_origins: list[str] = Field(default=origins, exclude=True)
     cors_allow_credentials: bool = Field(default=True, exclude=True)

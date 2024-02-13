@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 from src.core.database import get_async_session
 from src.core.models import Dish, Menu, SubMenu
 from src.core.schemas import ErrorResponse, SuccessResponse
+from src.core.services import create_background_task
 from src.dish import crud
 from src.dish.schemas import DishCreate, DishRead, DishUpdatePartial
 from src.dish.services import (
@@ -51,9 +52,9 @@ async def create_dish(
     """
     await check_unique_dish(session, dish.title)
 
-    background_tasks.add_task(redis.clear_cache, 'all_dishes')
-    background_tasks.add_task(clear_menu_cache, menu.id)
-    background_tasks.add_task(clear_submenu_cache, menu.id, submenu.id)
+    await create_background_task(background_tasks, redis.clear_cache, 'all_dishes')
+    await create_background_task(background_tasks, clear_menu_cache, menu.id)
+    await create_background_task(background_tasks, clear_submenu_cache, menu.id, submenu.id)
 
     new_dish = await crud.create_dish(session, dish, submenu)
 
@@ -137,8 +138,8 @@ async def update_dish(
     :param session:
     :return: dish
     """
-
-    background_tasks.add_task(
+    await create_background_task(
+        background_tasks,
         redis.clear_cache,
         f'{dish.submenu_id}_dish_{dish.id}',
         'all_dishes',
@@ -177,7 +178,6 @@ async def delete_dish(
     :param session:
     :return: result
     """
-
-    background_tasks.add_task(clear_dish_cache, dish.submenu_id, dish.id)
+    await create_background_task(background_tasks, clear_dish_cache, dish.submenu_id, dish.id)
 
     return await crud.delete_dish(session, dish)

@@ -60,7 +60,7 @@ async def delete_menu(
 async def get_menu_by_title(
     session: AsyncSession,
     menu_title: str,
-) -> Menu:
+) -> Menu | None:
     query = select(Menu).where(Menu.title == menu_title)
     result = await session.execute(query)
     return result.scalars().first()

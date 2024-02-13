@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 from src.core.database import get_async_session
 from src.core.models import Menu, SubMenu
 from src.core.schemas import ErrorResponse, SuccessResponse
+from src.core.services import create_background_task
 from src.menu.services import menu_by_id
 from src.redis.utils import redis
 from src.submenu import crud
@@ -46,7 +47,8 @@ async def create_submenu(
     """
     await check_unique_submenu(submenu.title, session)
 
-    background_tasks.add_task(
+    await create_background_task(
+        background_tasks,
         redis.clear_cache,
         'all_menus',
         'all_submenus',
@@ -134,8 +136,8 @@ async def update_submenu(
     :param session:
     :return: submenu
     """
-
-    background_tasks.add_task(
+    await create_background_task(
+        background_tasks,
         redis.clear_cache,
         f'{submenu.menu_id}_submenu_{submenu.id}',
         'all_submenus'
@@ -172,7 +174,11 @@ async def delete_submenu(
     :param submenu_id:
     :return: result
     """
-
-    background_tasks.add_task(clear_submenu_cache, submenu.menu_id, submenu.id)
+    await create_background_task(
+        background_tasks,
+        clear_submenu_cache,
+        submenu.menu_id,
+        submenu.id
+    )
 
     return await crud.delete_submenu(session, submenu)
